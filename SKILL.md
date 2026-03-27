@@ -22,8 +22,8 @@ conversion, filters, metadata extraction, and more.
 
 | Purpose | Path |
 |---------|------|
-| Script | `/home/ally/.claude/skills/image-sharp/scripts/image-sharp.js` |
-| Scratchpad | `/home/ally/.claude/skills/image-sharp/scratch/` |
+| Script | `~/.claude/skills/edit-image-skill/scripts/image-sharp.js` |
+| Scratchpad | `~/.claude/skills/edit-image-skill/scratch/` |
 
 All intermediate and temporary files go in the scratchpad. The final result is moved to the
 current working directory when work is complete.
