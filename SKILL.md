@@ -1,5 +1,5 @@
 ---
-name: image-sharp
+name: edit-image
 description: >
   Image manipulation and processing skill using Node.js Sharp framework. Use this skill whenever
   the user wants to resize, crop, rotate, flip, convert formats (jpg/png/webp/avif/tiff), adjust
