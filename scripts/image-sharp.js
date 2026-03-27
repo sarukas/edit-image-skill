@@ -5,11 +5,21 @@
  * Usage: node image-sharp.js --input <file> --output <file> [options]
  */
 
+// ---------------------------------------------------------------------------
+// Bootstrap: auto-install dependencies if node_modules is missing
+// ---------------------------------------------------------------------------
+const path = require('path');
+const fs = require('fs');
+if (!fs.existsSync(path.join(__dirname, 'node_modules'))) {
+  const { execSync } = require('child_process');
+  process.stderr.write('node_modules not found — running npm install...\n');
+  execSync('npm install --silent', { cwd: __dirname, stdio: 'inherit' });
+  process.stderr.write('Dependencies installed.\n');
+}
+
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const sharp = require('sharp');
-const path = require('path');
-const fs = require('fs');
 
 // ---------------------------------------------------------------------------
 // CLI argument definition
@@ -30,8 +40,8 @@ const argv = yargs(hideBin(process.argv))
   .option('resize',      { type: 'string',  description: 'WxH, W (height auto), or xH (width auto). e.g. 800x600, 800x, x600' })
   .option('resize-fit',  { type: 'string',  default: 'cover', description: 'Fit mode: cover|contain|fill|inside|outside' })
   .option('crop',        { type: 'string',  description: 'Extract region: left,top,width,height (e.g. 100,50,640,480)' })
-  .option('rotate', { type: 'string', default: 'auto', description: 'Degrees clockwise, or "auto" (default) for EXIF-based rotation' })
-  .option('no-auto-rotate', { type: 'boolean', default: false, description: 'Disable automatic EXIF orientation correction' })
+  .option('rotate',      { type: 'string',  default: 'auto', description: 'Degrees clockwise, or "auto" (default) for EXIF-based rotation' })
+  .option('no-auto-rotate', { type: 'boolean', default: false, description: 'Disable automatic EXIF orientation correction (explicit --rotate degrees still apply)' })
   .option('flip',        { type: 'boolean', default: false, description: 'Flip vertically (top-to-bottom mirror)' })
   .option('flop',        { type: 'boolean', default: false, description: 'Flop horizontally (left-to-right mirror)' })
   .option('trim',        { type: 'boolean', default: false, description: 'Trim border pixels' })
@@ -86,14 +96,38 @@ function parseCrop(str) {
   if (parts.length !== 4 || parts.some(isNaN)) {
     die(`Invalid --crop value "${str}". Expected: left,top,width,height`);
   }
-  return { left: parts[0], top: parts[1], width: parts[2], height: parts[3] };
+  // Sharp extract() requires integers
+  const [left, top, width, height] = parts.map(Math.round);
+  if (width <= 0 || height <= 0) die(`--crop width and height must be > 0`);
+  return { left, top, width, height };
 }
 
 function resolveFormat(fmt, outputPath) {
-  if (fmt) return fmt.replace('jpg', 'jpeg').toLowerCase();
+  if (fmt) {
+    const f = fmt.toLowerCase();
+    return f === 'jpg' ? 'jpeg' : f;
+  }
   const ext = path.extname(outputPath).slice(1).toLowerCase();
-  if (ext === 'jpg') return 'jpeg';
-  return ext || null;
+  return ext === 'jpg' ? 'jpeg' : (ext || null);
+}
+
+function applyRotate(pipeline, rotateArg, noAutoRotate) {
+  if (noAutoRotate) {
+    // Auto-correction disabled — only apply if user gave explicit degrees
+    if (rotateArg !== 'auto') {
+      const deg = parseFloat(rotateArg);
+      if (isNaN(deg)) die(`--rotate value must be a number or "auto", got: ${rotateArg}`);
+      return pipeline.rotate(deg);
+    }
+    return pipeline;
+  }
+  // Auto-correction enabled (default)
+  if (rotateArg === 'auto') {
+    return pipeline.rotate(); // apply EXIF orientation
+  }
+  const deg = parseFloat(rotateArg);
+  if (isNaN(deg)) die(`--rotate value must be a number or "auto", got: ${rotateArg}`);
+  return pipeline.rotate(deg);
 }
 
 // ---------------------------------------------------------------------------
@@ -118,6 +152,7 @@ async function main() {
       hasAlpha:    meta.hasAlpha,
       colorSpace:  meta.space,
       density:     meta.density,
+      orientation: meta.orientation || null,
       exif:        meta.exif ? '<present>' : null,
       icc:         meta.icc  ? '<present>' : null,
       fileSize:    fs.statSync(argv.input).size,
@@ -133,6 +168,7 @@ async function main() {
     if (!fs.existsSync(previewDir)) fs.mkdirSync(previewDir, { recursive: true });
     const meta = await sharp(argv.input, { failOn: 'none' }).metadata();
     await sharp(argv.input, { failOn: 'none' })
+      .rotate()                                          // fix EXIF orientation in preview
       .resize({ width: 400, withoutEnlargement: true })
       .jpeg({ quality: 75 })
       .toFile(previewPath);
@@ -142,6 +178,7 @@ async function main() {
       sourceWidth:   meta.width,
       sourceHeight:  meta.height,
       sourceFormat:  meta.format,
+      orientation:   meta.orientation || null,
       sourceSizeKB:  Math.round(fs.statSync(argv.input).size / 1024),
       previewSizeKB: Math.round(previewSize / 1024),
     }, null, 2));
@@ -160,16 +197,8 @@ async function main() {
   // Chain operations in logical order
   let pipeline = img;
 
-  // 1. Auto-rotate (EXIF) or manual rotate
-  if (!argv['no-auto-rotate']) {
-    if (argv.rotate === 'auto') {
-      pipeline = pipeline.rotate(); // apply EXIF orientation
-    } else {
-      const deg = parseFloat(argv.rotate);
-      if (isNaN(deg)) die(`--rotate value must be a number or "auto", got: ${argv.rotate}`);
-      pipeline = pipeline.rotate(deg);
-    }
-  }
+  // 1. Rotate (EXIF auto-correct by default, or explicit degrees)
+  pipeline = applyRotate(pipeline, argv.rotate, argv['no-auto-rotate']);
 
   // 2. Flip / Flop
   if (argv.flip) pipeline = pipeline.flip();
