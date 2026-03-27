@@ -1,0 +1,17 @@
+{
+  "name": "image-sharp-skill",
+  "version": "1.0.0",
+  "description": "CLI image manipulation tool for Claude using Sharp",
+  "main": "image-sharp.js",
+  "scripts": {
+    "test": "node image-sharp.js --help"
+  },
+  "dependencies": {
+    "sharp": "^0.34.0",
+    "yargs": "^17.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
