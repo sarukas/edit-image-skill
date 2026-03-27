@@ -30,7 +30,8 @@ const argv = yargs(hideBin(process.argv))
   .option('resize',      { type: 'string',  description: 'WxH, W (height auto), or xH (width auto). e.g. 800x600, 800x, x600' })
   .option('resize-fit',  { type: 'string',  default: 'cover', description: 'Fit mode: cover|contain|fill|inside|outside' })
   .option('crop',        { type: 'string',  description: 'Extract region: left,top,width,height (e.g. 100,50,640,480)' })
-  .option('rotate',      { type: 'string',  description: 'Degrees clockwise, or "auto" for EXIF-based rotation' })
+  .option('rotate', { type: 'string', default: 'auto', description: 'Degrees clockwise, or "auto" (default) for EXIF-based rotation' })
+  .option('no-auto-rotate', { type: 'boolean', default: false, description: 'Disable automatic EXIF orientation correction' })
   .option('flip',        { type: 'boolean', default: false, description: 'Flip vertically (top-to-bottom mirror)' })
   .option('flop',        { type: 'boolean', default: false, description: 'Flop horizontally (left-to-right mirror)' })
   .option('trim',        { type: 'boolean', default: false, description: 'Trim border pixels' })
@@ -160,9 +161,9 @@ async function main() {
   let pipeline = img;
 
   // 1. Auto-rotate (EXIF) or manual rotate
-  if (argv.rotate) {
+  if (!argv['no-auto-rotate']) {
     if (argv.rotate === 'auto') {
-      pipeline = pipeline.rotate();
+      pipeline = pipeline.rotate(); // apply EXIF orientation
     } else {
       const deg = parseFloat(argv.rotate);
       if (isNaN(deg)) die(`--rotate value must be a number or "auto", got: ${argv.rotate}`);
