@@ -12,7 +12,7 @@ description: >
   and asks for any kind of manipulation — even if they just say "process this" or "fix this image".
 ---
 
-# Image Sharp Skill
+# Edit Image Skill
 
 A Node.js image processing skill powered by the [Sharp](https://sharp.pixelplumbing.com/) library.
 Sharp is a high-performance image processing library that supports resize, crop, rotate, format
