@@ -23,8 +23,8 @@ conversion, filters, metadata extraction, and more.
 
 | Purpose | Path |
 |---------|------|
-| Script | `~/.claude/skills/edit-image-skill/scripts/image-sharp.js` |
-| Scratchpad | `~/.claude/skills/edit-image-skill/scratch/` |
+| Script | `~/.claude/skills/edit-image/scripts/image-sharp.js` |
+| Scratchpad | `~/.claude/skills/edit-image/scratch/` |
 
 All intermediate and temporary files go in the scratchpad. The final result is moved to the
 current working directory when work is complete.
@@ -32,13 +32,13 @@ current working directory when work is complete.
 ## Setup (first time only)
 
 ```bash
-cd ~/.claude/skills/edit-image-skill/scripts && npm install
+cd ~/.claude/skills/edit-image/scripts && npm install
 ```
 
 ## CLI Reference
 
 ```bash
-node ~/.claude/skills/edit-image-skill/scripts/image-sharp.js [options]
+node ~/.claude/skills/edit-image/scripts/image-sharp.js [options]
 ```
 
 ### Core Options
@@ -79,8 +79,8 @@ node ~/.claude/skills/edit-image-skill/scripts/image-sharp.js [options]
 ### Quick Examples
 
 ```bash
-SCRIPT="$HOME/.claude/skills/edit-image-skill/scripts/image-sharp.js"
-SCRATCH="$HOME/.claude/skills/edit-image-skill/scratch"
+SCRIPT="$HOME/.claude/skills/edit-image/scripts/image-sharp.js"
+SCRATCH="$HOME/.claude/skills/edit-image/scratch"
 
 # Metadata
 node $SCRIPT --input photo.jpg --info
@@ -116,8 +116,8 @@ in context, burning tokens for the rest of the conversation. Use CLI calls inste
 node $SCRIPT --input photo.jpg --info
 
 # Preview — only when you need to see the image to make decisions
-node $SCRIPT --input photo.jpg --preview ~/.claude/skills/edit-image-skill/scratch/preview.jpg
-# then: display_file ~/.claude/skills/edit-image-skill/scratch/preview.jpg
+node $SCRIPT --input photo.jpg --preview ~/.claude/skills/edit-image/scratch/preview.jpg
+# then: display_file ~/.claude/skills/edit-image/scratch/preview.jpg
 ```
 
 The viewer renders the preview without loading it into context. Skip the preview step
@@ -125,18 +125,18 @@ when the user's description is sufficient to plan the operations.
 
 ### Step 2 — Work in the scratchpad
 
-All intermediate files go to `~/.claude/skills/edit-image-skill/scratch/`. Use short descriptive names:
-- `~/.claude/skills/edit-image-skill/scratch/preview.jpg` — orientation thumbnail
-- `~/.claude/skills/edit-image-skill/scratch/step1-crop.png` — after crop
-- `~/.claude/skills/edit-image-skill/scratch/step2-bw.png` — after grayscale
-- `~/.claude/skills/edit-image-skill/scratch/final.png` — finished result
+All intermediate files go to `~/.claude/skills/edit-image/scratch/`. Use short descriptive names:
+- `~/.claude/skills/edit-image/scratch/preview.jpg` — orientation thumbnail
+- `~/.claude/skills/edit-image/scratch/step1-crop.png` — after crop
+- `~/.claude/skills/edit-image/scratch/step2-bw.png` — after grayscale
+- `~/.claude/skills/edit-image/scratch/final.png` — finished result
 
 ### Step 3 — Move the final result to the current working directory
 
 When work is complete, copy the final file to the user's current working directory:
 
 ```bash
-cp ~/.claude/skills/edit-image-skill/scratch/final.png ./result.png
+cp ~/.claude/skills/edit-image/scratch/final.png ./result.png
 ```
 
 Tell the user the filename so they know what to look for. Use `display_file` on the

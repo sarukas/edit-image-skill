@@ -41,9 +41,9 @@ cd edit-image-skill/scripts && npm install
 Then install as a Claude Code skill by copying (or symlinking) the root folder into your skills directory:
 
 ```bash
-cp -r edit-image-skill ~/.claude/skills/image-sharp
+cp -r edit-image-skill ~/.claude/skills/edit-image
 # or for project-level install:
-cp -r edit-image-skill .claude/skills/image-sharp
+cp -r edit-image-skill .claude/skills/edit-image
 ```
 
 ## Usage
