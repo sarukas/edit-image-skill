@@ -45,6 +45,7 @@ const argv = yargs(hideBin(process.argv))
   .option('flip',        { type: 'boolean', default: false, description: 'Flip vertically (top-to-bottom mirror)' })
   .option('flop',        { type: 'boolean', default: false, description: 'Flop horizontally (left-to-right mirror)' })
   .option('trim',        { type: 'boolean', default: false, description: 'Trim border pixels' })
+  .option('round',       { type: 'number',  description: 'Rounded corner radius in pixels (e.g. 40). Output forced to PNG for alpha support' })
 
   // Format & quality
   .option('format',  { type: 'string', description: 'Output format: jpeg|jpg|png|webp|avif|tiff|gif' })
@@ -270,13 +271,37 @@ async function main() {
     }]);
   }
 
-  // 14. Output format + quality
+  // 14. Rounded corners (must run before final format since it needs intermediate buffer)
+  if (argv.round !== undefined) {
+    const radius = Math.round(argv.round);
+    if (radius <= 0) die('--round radius must be > 0');
+    // Materialise to PNG buffer so Sharp can re-read with correct metadata
+    const pngBuf = await pipeline.ensureAlpha().png().toBuffer();
+    const meta = await sharp(pngBuf).metadata();
+    const { width, height } = meta;
+    const mask = Buffer.from(
+      `<svg width="${width}" height="${height}">` +
+      `<rect x="0" y="0" width="${width}" height="${height}" rx="${radius}" ry="${radius}" fill="white"/>` +
+      `</svg>`
+    );
+    pipeline = sharp(pngBuf)
+      .composite([{ input: mask, blend: 'dest-in' }]);
+  }
+
+  // 15. Output format + quality
   const fmt = resolveFormat(argv.format, argv.output);
   const quality = argv.quality;
+  // Rounded corners require alpha — force PNG if format would lose transparency
+  const alphaNeeded = argv.round !== undefined;
+  const noAlphaFormats = ['jpeg', 'jpg', 'tiff'];
+  if (alphaNeeded && fmt && noAlphaFormats.includes(fmt.toLowerCase())) {
+    console.warn(`WARN: --round requires alpha channel; overriding --format ${fmt} → png`);
+  }
+  const effectiveFmt = (alphaNeeded && fmt && noAlphaFormats.includes(fmt.toLowerCase())) ? 'png' : fmt;
 
-  if (fmt) {
+  if (effectiveFmt) {
     const fmtOptions = quality !== undefined ? { quality } : {};
-    switch (fmt) {
+    switch (effectiveFmt) {
       case 'jpeg': pipeline = pipeline.jpeg(fmtOptions); break;
       case 'png':  pipeline = pipeline.png(fmtOptions);  break;
       case 'webp': pipeline = pipeline.webp(fmtOptions); break;
@@ -284,7 +309,7 @@ async function main() {
       case 'tiff': pipeline = pipeline.tiff(fmtOptions); break;
       case 'gif':  pipeline = pipeline.gif();            break;
       default:
-        console.warn(`WARN: Unknown format "${fmt}", letting Sharp infer from extension`);
+        console.warn(`WARN: Unknown format "${effectiveFmt}", letting Sharp infer from extension`);
     }
   } else if (quality !== undefined) {
     console.warn('WARN: --quality specified without --format; quality may be ignored');

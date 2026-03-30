@@ -7,6 +7,7 @@ description: >
   Trigger on: "resize this image", "convert to webp", "make it grayscale", "rotate 90 degrees",
   "compress this image", "crop to 800x600", "extract image info", "blur the image", "sharpen",
   "flip", "flop", "overlay", "composite", "get image metadata", "batch process images",
+  "rounded corners", "round corners", "add border radius",
   or any request involving image editing, transformation, or processing.
   Always use this skill when the user provides image files (jpg, png, webp, gif, avif, tiff, svg)
   and asks for any kind of manipulation — even if they just say "process this" or "fix this image".
@@ -73,6 +74,7 @@ node ~/.claude/skills/edit-image-skill/scripts/image-sharp.js [options]
 | `--composite-gravity G` | `--composite-gravity southeast` | Position: center, north, south, east, west, northeast, northwest, southeast, southwest |
 | `--composite-blend B` | `--composite-blend over` | Blend mode: over, multiply, screen, overlay |
 | `--trim` | `--trim` | Trim similar border pixels |
+| `--round N` | `--round 40` | Rounded corner radius in pixels (output forced to PNG for alpha) |
 
 ### Quick Examples
 

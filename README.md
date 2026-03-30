@@ -27,6 +27,7 @@ Gives Claude a CLI tool to resize, crop, rotate, flip, convert formats, apply fi
 | Colour tint | `--tint "#FF6600"` |
 | Composite / watermark overlay | `--composite logo.png --composite-gravity southeast` |
 | Trim borders | `--trim` |
+| Rounded corners | `--round 40` |
 
 Multiple operations can be combined in a single command.
 
